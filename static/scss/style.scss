@@ -1,0 +1,177 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+
+body, html {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 10px;
+}
+
+.chat-box {
+    flex: 8;
+    border: 1px solid #ddd;
+    padding: 10px;
+    overflow-y: auto;
+    background: #f9f9f9;
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    flex:3;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+}
+
+.input-area {
+    flex: 1;
+}
+
+.input-content {
+    width: 100%;
+    height: 100%;
+    border:none;
+}
+
+.tool-bar-area {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.button-left {
+    padding: 10px;
+}
+
+.button-right {
+    padding: 10px;
+}
+
+textarea:focus {
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.alert {
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px;
+    background: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+.alert.show {
+    display: block;
+    opacity: 1;
+}
+
+
+button {
+    margin-left: 10px;
+    padding: 10px;
+    font-size: 16px;
+    background: blue;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: darkblue;
+}
+
+.message {
+    margin: 5px 0;
+}
+
+.user { text-align: right; color: blue; }
+.bot { text-align: left; color: green; }
+
+@mixin circle {
+    display: inline-block;
+    background-color: blue;
+    border-radius: 50%;
+    margin: 4px;
+}
+
+@function circleAnimation($case) {
+    @if ($case == 1) {
+        @return circleAnimation1
+    } @else if ($case == 2) {
+        @return circleAnimation2
+    } @else {
+        @return circleAnimation3
+    }
+}
+
+@keyframes circleAnimation1 {
+    0%, 100% {
+        width: 4px;
+        height: 4px;
+    }
+    33.33% {
+        width: 6px;
+        height: 6px;
+    }
+    66.66% {
+        width: 8px;
+        height: 8px;
+    }
+}
+
+@keyframes circleAnimation2 {
+    0%, 100% {
+        width: 6px;
+        height: 6px;
+    }
+    33.33% {
+        width: 8px;
+        height: 8px;
+    }
+    66.66% {
+        width: 4px;
+        height: 4px;
+    }
+}
+
+@keyframes circleAnimation3 {
+    0%, 100% {
+        width: 8px;
+        height: 8px;
+    }
+    33.33% {
+        width: 4px;
+        height: 4px;
+    }
+    66.66% {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+#bot-input-animation-1 {
+    @include circle;
+    animation: circleAnimation(1) 2s linear infinite;
+}
+
+#bot-input-animation-2 {
+    @include circle;
+    animation: circleAnimation(2) 2s linear infinite;
+}
+
+#bot-input-animation-3 {
+    @include circle;
+    animation: circleAnimation(3) 2s linear infinite;
+}
