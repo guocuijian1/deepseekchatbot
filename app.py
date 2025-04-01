@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, jsonify, Response
 from flask_assets import Environment
 from webassets import Bundle
 from chatservice import ChatUtil
+from livereload import Server
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -36,5 +37,8 @@ def new_topic():
 
 
 if __name__ == '__main__':
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.run(debug=True)
+    if __name__ == "__main__":
+        server = Server(app.wsgi_app)
+        server.watch('templates/*.html')  # Watch HTML files
+        server.watch('static/*.*')  # Watch CSS/JS files
+        server.serve(debug=True, port=5000)

@@ -5,7 +5,7 @@ function sendMessage() {
 
     let chatBox = document.getElementById('chat-box');
     chatBox.innerHTML += `<div class="message user">${message}</div>`;
-    let original =chatBox.innerHTML;
+    let original = chatBox.innerHTML;
     chatBox.innerHTML = original + `<div><span id="bot-input-animation-1">&nbsp;</span>
     <span id="bot-input-animation-2">&nbsp;</span>
     <span id="bot-input-animation-3">&nbsp;</span></div>`
@@ -43,6 +43,12 @@ function onDocumentLoaded(event) {
         if (event.key === 'Enter') {
             sendMessage();
         }
+    })
+
+    let clearBtn = document.getElementById('clearHistoryBtn')
+    clearBtn.addEventListener("click", function (event) {
+        let chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = '';
     })
 
     let newTopicBtn = document.getElementById('newTopicBtn')

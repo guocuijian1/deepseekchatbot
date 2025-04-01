@@ -43,10 +43,7 @@ body, html {
   display: flex;
   justify-content: flex-end; }
 
-.button-left {
-  padding: 10px; }
-
-.button-right {
+.button-bottom {
   padding: 10px; }
 
 textarea:focus {
