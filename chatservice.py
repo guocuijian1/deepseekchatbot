@@ -1,3 +1,4 @@
+import json
 import os
 import chromadb
 import glob
@@ -6,11 +7,17 @@ from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_ollama import OllamaEmbeddings
 from openai import OpenAI
-import gradio as gr
+
+
+def get_event_source_data(message):
+    data = {"value":message}
+    sse_message = f"data: {json.dumps(data)}\n\n"
+    return sse_message
 
 
 class ChatUtil:
     __instance = None
+    __stream_instance = None
 
     def __init__(self):
         current_file_path = os.path.dirname(__file__)
@@ -23,16 +30,23 @@ class ChatUtil:
         self.__vector_store = self.load_vectordb()
         self.__chat_model = "deepseek-chat"
         self.__client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url="https://api.deepseek.com")
-        self.__system_template = "请根据以下提供的上下文信息来回答最后的问题，请始终用中文回答。请直接返回一段html。"
+        self.__system_template = "请根据以下提供的上下文信息来回答最后的问题，请始终用中文回答。内容以Markdown的形式显示。"
         self.history = [{"role": "system", "content": self.__system_template}]
 
     @classmethod
-    def get_instance(cls):
-        if cls.__instance:
-            return cls.__instance
+    def get_instance(cls, stream=False):
+        if stream:
+            if cls.__stream_instance:
+                return cls.__stream_instance
+            else:
+                cls.__stream_instance = ChatUtil()
+                return cls.__stream_instance
         else:
-            cls.__instance = ChatUtil()
-            return cls.__instance
+            if cls.__instance:
+                return cls.__instance
+            else:
+                cls.__instance = ChatUtil()
+                return cls.__instance
 
     @classmethod
     def split_documents(cls, file_path):
@@ -71,15 +85,45 @@ class ChatUtil:
     def get_messages(self, message):
         content = ""
         if len(self.history) == 1:
-            results = self.__vector_store.similarity_search(message, k=10)
+            results = self.__vector_store.similarity_search(message, k=30)
             for res in results:
-                print(f"Query data from vector db,content:{res.page_content},metadata:{res.metadata}")
+                print(f"Query data from vector db,content:\n{res.page_content},metadata:{res.metadata}")
                 content += res.page_content + "\n"
         else:
             content = message
 
         self.history.append({"role": "user", "content": content})
         return self.history
+
+    def chat_with_stream(self, message):
+        messages = self.get_messages(message)
+        response = self.__client.chat.completions.create(
+            model=self.__chat_model,
+            messages=messages,
+            stream=True
+        )
+
+        reply = ""
+        for chunk in response:
+            if chunk.choices[0].delta and chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                sse_message = get_event_source_data(content)
+                #print(sse_message)
+                reply += content
+                yield sse_message
+
+        print(f"回复的完整信息为:\n{reply}")
+        self.history.append({"role": "user", "content": reply})
+        print(f"The history number is:{len(self.history)}")
+
+        finish_message = get_event_source_data("Finish")
+        yield finish_message
+
+    def new_topic(self):
+        self.history = self.history[:1]
+        msg = f"共有{len(self.history)-1}条历史记录被清楚"
+        print(msg)
+        return msg
 
     def chat(self, message):
         messages = self.get_messages(message)
@@ -94,18 +138,5 @@ class ChatUtil:
         print(f"回复的信息为:{result}")
         return result
 
-    def new_topic(self):
-        self.history = self.history[:1]
-        print("对话上下文已经被清除")
-        return "对话上下文已经被清除"
 
-
-"""cu = ChatUtil.get_instance()
-chatbot = gr.Interface(
-    fn=cu.chat,
-    inputs=gr.Textbox(label="用户输入"),
-    outputs=gr.Textbox(label="机器人回复"),
-    title="聊天机器人"
-)
-chatbot.launch(server_name="0.0.0.0", server_port=5000, inline=True)"""
 __all__ = ['ChatUtil']

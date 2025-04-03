@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot UI</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
 <body onload="onDocumentLoaded()">
@@ -20,19 +21,21 @@
         </div>
 
         <div class="tool-bar-area">
-            <button id="clearHistoryBtn" class="button-bottom">
+            <button id="clearHistoryBtn" title="清除界面历史信息" class="button-bottom">
                 <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="50" cy="50" r="45" stroke="white" stroke-width="5" fill="white"/>
-                    <polyline points="30,50 45,65 70,35" stroke="black" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="30" y1="30" x2="70" y2="70" stroke="black" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="70" y1="30" x2="30" y2="70" stroke="black" stroke-width="5" stroke-linecap="round"/>
                 </svg>
+
             </button>
-            <button id="newTopicBtn" class="button-bottom">
+            <button id="newTopicBtn" title="新建对话" class="button-bottom">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" fill="white"/>
                     <path d="M12 7V17M7 12H17" stroke="#007bff" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </button>
-            <button id="sendMessageBtn" class="button-bottom">
+            <button id="sendMessageBtn" title="发送消息" class="button-bottom">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="#007bff" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2 12L22 2L15 22L11 14L2 12Z" fill="white"/>
                 </svg>

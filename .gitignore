@@ -1,3 +1,4 @@
 /chatllm/
-/static/.webassets-cache/
 /vector_db/
+/.idea/
+/static/.webassets-cache/
