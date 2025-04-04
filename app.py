@@ -1,10 +1,12 @@
 import time
-import uuid
 
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, make_response
 from flask_assets import Environment
 from webassets import Bundle
-from chatservice import ChatUtil
+
+import app_service
+from chat_service import ChatUtil
+
 app = Flask(__name__)
 assets = Environment(app)
 
@@ -14,6 +16,7 @@ assets.register('scss_all', scss)
 scss.build()  # This compiles SCSS into CSS
 
 message_store = {}
+instance_store = {}
 
 
 @app.route('/')
@@ -25,14 +28,16 @@ def hello_world():  # put application's code here
 def chat():  # put application's code here
     user_message = request.json.get("message")
     stream = request.json.get("stream")
-    session_id = str(uuid.uuid4())
+    stream_enabled = True if stream == "true" else False
+    instance = ChatUtil.get_instance(stream_enabled)
+    data = jsonify({'response': '流模式已打开！'}) if stream_enabled else jsonify(
+        {'response': instance.chat(user_message)})
+    resp = make_response(data)
+    app_service.set_or_check_session_id(request, resp)
+    session_id = app_service.set_or_check_session_id(request=request, response=resp)
+    instance_store[session_id] = instance
     message_store[session_id] = user_message
-
-    if stream:
-        return jsonify({"response": session_id})
-    else:
-        instance = ChatUtil.get_instance()
-        return jsonify({'response': instance.chat(user_message)})
+    return resp
 
 
 @app.route("/stream/<session_id>", methods=["GET"])
@@ -40,17 +45,17 @@ def chat_with_stream(session_id):
     if session_id not in message_store:
         return "Invalid session ID", 400
 
-    instance = ChatUtil.get_instance(stream=True)
+    instance = instance_store.get(session_id)
     user_message = message_store[session_id]
 
-    return Response(instance.chat_with_stream(user_message), content_type="text/event-stream")
+    return Response(instance.chat_with_streaming(user_message), content_type="text/event-stream")
 
 
-@app.route('/chat/new_topic', methods=['DELETE'])
+@app.route('/chat/clear_history', methods=['DELETE'])
 def new_topic():
-    stream = request.args['stream']
-    instance = ChatUtil.get_instance(stream=stream)
-    response = instance.new_topic()
+    session_id = request.args['session_id']
+    instance = instance_store.get(session_id)
+    response = instance.clear_history()
     return jsonify({'response': response})
 
 

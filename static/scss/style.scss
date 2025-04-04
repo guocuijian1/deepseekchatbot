@@ -14,7 +14,7 @@ body, html {
     padding: 10px;
 }
 
-.chat-box {
+.chat-box-container {
     flex: 8;
     border: 1px solid #ddd;
     padding: 10px;
@@ -22,7 +22,7 @@ body, html {
     background: #f9f9f9;
 }
 
-.input-container {
+.chat-interface-container {
     display: flex;
     flex-direction: column;
     flex:3;
@@ -31,22 +31,22 @@ body, html {
     border: 1px solid #ddd;
 }
 
-.input-area {
+.user-message-container {
     flex: 1;
 }
 
-.input-content {
+.user-message-input {
     width: 100%;
     height: 100%;
     border:none;
 }
 
-.tool-bar-area {
+.chat-button-container {
     display: flex;
     justify-content: flex-end;
 }
 
-.button-bottom {
+.chat-button {
     padding: 10px;
 }
 

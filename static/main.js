@@ -1,34 +1,50 @@
- function sendMessage() {
-    const stream = window.localStorage.getItem("enable_chat_stream")
-    let inputField = document.getElementById('textInput');
-    let message = inputField.value.trim();
-    if (message === '') return;
+function getCookie(name) {
+    const values = document.cookie.split(';');
+    for (let i = 0; i < values.length; i++) {
+        const value = values[i].split('=');
+        if (value[0] === name) {
+            return value[1]
+        }
+    }
+}
 
-    let chatBox = document.getElementById('chat-box');
-    let userMessage = createUserMessageDiv(message);
-    chatBox.appendChild(userMessage);
+function handleSendMessage() {
+    const isStreamEnabled = window.localStorage.getItem("enable_chat_stream") === "true";
+    let messageInputElement = document.getElementById('user-message-input');
+    let user_message = messageInputElement.value.trim();
+    if (user_message === '') return;
 
-    let loadingElement = createLoadingMessageDiv();
-    chatBox.appendChild(loadingElement);
+    let chatBoxElement = document.getElementById('chat-box-container');
+    let userMessageElement = createUserMessageElement(user_message);
+    chatBoxElement.appendChild(userMessageElement);
+
+    let loadingMessageElement = createLoadingMessageElement();
+    chatBoxElement.appendChild(loadingMessageElement);
+    chatBoxElement.scrollTop = chatBoxElement.scrollHeight;
 
     let url = '/chat'
     fetch(url, {
         method: 'POST',
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message: message, stream: stream})
+        body: JSON.stringify({message: user_message, stream: isStreamEnabled})
     })
         .then(response => {
             response.json().then(data => {
-                chatBox.removeChild(loadingElement);
-                let messageElement = createMessageElement(stream);
-                chatBox.appendChild(messageElement);
-                if (stream) {
-                    const sessionId = data.response;
+                let chatMessageElement = createChatMessageElement(isStreamEnabled);
+                if (isStreamEnabled) {
+                    const sessionId = getCookie('session_id');
                     const stream_url = `/stream/${sessionId}`;
                     const eventSource = new EventSource(stream_url);
 
-                    let content = ''
+                    let content = '';
+
                     eventSource.addEventListener("message", e => {
+                        if (loadingMessageElement) {
+                            chatBoxElement.removeChild(loadingMessageElement);
+                            loadingMessageElement = null;
+                            chatBoxElement.appendChild(chatMessageElement);
+                            chatBoxElement.scrollTop = chatBoxElement.scrollHeight;
+                        }
                         const jsonObj = JSON.parse(e.data);
                         const data = jsonObj.value;
                         if (data.trim() === "Finish") {
@@ -36,9 +52,8 @@
                             eventSource.close();
                         } else {
                             content += data
-                            //messageElement.innerHTML = marked.parse(content);
-                            messageElement.innerHTML = content;
-                            chatBox.scrollTop = chatBox.scrollHeight;
+                            chatMessageElement.innerHTML = marked.parse(content);
+                            chatBoxElement.scrollTop = chatBoxElement.scrollHeight;
                         }
                     })
 
@@ -54,77 +69,76 @@
                         }
                     }
 
-                    fetch(stream_url).then(r => {
-
-                    })
+                    fetch(stream_url).then();
 
                 } else {
-                    messageElement.innerHTML = marked.parse(data.response);
-                    chatBox.scrollTop = chatBox.scrollHeight;
+                    chatBoxElement.removeChild(loadingMessageElement);
+                    chatBoxElement.appendChild(chatMessageElement);
+                    chatMessageElement.innerHTML = marked.parse(data.response);
+                    chatBoxElement.scrollTop = chatBoxElement.scrollHeight;
                 }
             })
         })
 
-    inputField.value = '';
+    messageInputElement.value = '';
 }
 
-function newTopic() {
-    const stream = window.localStorage.getItem("enable_chat_stream");
-    const url = `/chat/new_topic?stream=${stream}`;
+function handleClearChatHistory() {
+    const sessionId = getCookie('session_id');
+    const url = `/chat/clear_history?session_id=${sessionId}`;
     fetch(url, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
     })
         .then(response => response.json())
         .then(data => {
-            showNotification(data.response)
+            showSystemNotification(data.response)
         })
 }
 
-function onDocumentLoaded(event) {
-    let inputEle = document.getElementById('textInput')
-    inputEle.innerText = ""
+function initializeChatInterface(event) {
+    let userMessageInputElement = document.getElementById('user-message-input')
+    userMessageInputElement.innerText = ""
 
-    let textInput = document.getElementById('textInput')
-    textInput.addEventListener("keydown", function (event) {
+    userMessageInputElement.addEventListener("keydown", function (event) {
         if (event.key === 'Enter') {
-            sendMessage();
+            handleSendMessage();
         }
     })
 
-    let clearBtn = document.getElementById('clearHistoryBtn')
-    clearBtn.addEventListener("click", function (event) {
-        let chatBox = document.getElementById('chat-box');
-        chatBox.innerHTML = '';
+    let clearUIHistoryBtn = document.getElementById('clearUIHistoryBtn')
+    clearUIHistoryBtn.addEventListener("click", function (event) {
+        let chatBoxElement = document.getElementById('chat-box-container');
+        chatBoxElement.innerHTML = '';
     })
 
-    let newTopicBtn = document.getElementById('newTopicBtn')
-    newTopicBtn.addEventListener('click', function () {
-        newTopic()
+    let clearChatHistoryBtn = document.getElementById('clearChatHistoryBtn')
+    clearChatHistoryBtn.addEventListener('click', function () {
+        handleClearChatHistory()
     })
 
-    let sendButton = document.getElementById('sendMessageBtn')
-    sendButton.addEventListener('click', function () {
-        sendMessage()
+    let sendUserMessageBtn = document.getElementById('sendUserMessageBtn')
+    sendUserMessageBtn.addEventListener('click', function () {
+        handleSendMessage()
     })
 }
 
-function showNotification(message) {
-    const msgDiv = document.getElementById('message');
-    msgDiv.textContent = message;
-    msgDiv.classList.add('show');
-    setTimeout(() => msgDiv.classList.remove('show'), 1000);
+function showSystemNotification(message) {
+    const systemMessageDiv = document.getElementById('system-message');
+    systemMessageDiv.textContent = message;
+    systemMessageDiv.classList.add('show');
+    setTimeout(() => systemMessageDiv.classList.remove('show'), 1000);
 }
 
-function createUserMessageDiv(message) {
+function createUserMessageElement(user_message) {
     const tempDiv = document.createElement('div');
     tempDiv.classList.add('message','user');
-    tempDiv.textContent = message;
+    tempDiv.textContent = user_message;
 
     return tempDiv
 }
 
-function createLoadingMessageDiv() {
+function createLoadingMessageElement() {
     const tempDiv = document.createElement('div');
     const span1 = document.createElement('span');
     span1.id = 'bot-input-animation-1';
@@ -141,7 +155,7 @@ function createLoadingMessageDiv() {
     return tempDiv
 }
 
-function createMessageElement(stream) {
+function createChatMessageElement(stream) {
     if (stream) {
         return document.createElement('pre');
     } else {

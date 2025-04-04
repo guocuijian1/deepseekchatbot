@@ -8,20 +8,20 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
-<body onload="onDocumentLoaded()">
+<body onload="initializeChatInterface()">
 <div class="chat-container">
-    <div class="alert" id="message"></div>
+    <div class="alert" id="system-message"></div>
 
-    <div class="chat-box" id="chat-box"></div>
+    <div class="chat-box-container" id="chat-box-container"></div>
 
-    <div class="input-container">
-        <div class="input-area">
-            <textarea id="textInput" class="input-content" placeholder="请输入信息...">
+    <div class="chat-interface-container">
+        <div class="user-message-container">
+            <textarea id="user-message-input" class="user-message-input" placeholder="请输入信息...">
             </textarea>
         </div>
 
-        <div class="tool-bar-area">
-            <button id="clearHistoryBtn" title="清除界面历史信息" class="button-bottom">
+        <div class="chat-button-container">
+            <button id="clearUIHistoryBtn" title="清除界面历史信息" class="chat-button">
                 <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="50" cy="50" r="45" stroke="white" stroke-width="5" fill="white"/>
                     <line x1="30" y1="30" x2="70" y2="70" stroke="black" stroke-width="5" stroke-linecap="round"/>
@@ -29,13 +29,13 @@
                 </svg>
 
             </button>
-            <button id="newTopicBtn" title="新建对话" class="button-bottom">
+            <button id="clearChatHistoryBtn" title="新建对话" class="chat-button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" fill="white"/>
                     <path d="M12 7V17M7 12H17" stroke="#007bff" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </button>
-            <button id="sendMessageBtn" title="发送消息" class="button-bottom">
+            <button id="sendUserMessageBtn" title="发送消息" class="chat-button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="#007bff" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2 12L22 2L15 22L11 14L2 12Z" fill="white"/>
                 </svg>
