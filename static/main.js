@@ -1,3 +1,6 @@
+let timerInterval;
+let secondsElapsed = 0;
+
 function getCookie(name) {
     const values = document.cookie.split(';');
     for (let i = 0; i < values.length; i++) {
@@ -9,6 +12,7 @@ function getCookie(name) {
 }
 
 function handleSendMessage() {
+    startTimer();
     const isStreamEnabled = window.localStorage.getItem("enable_chat_stream") === "true";
     let messageInputElement = document.getElementById('user-message-input');
     let user_message = messageInputElement.value.trim();
@@ -39,6 +43,7 @@ function handleSendMessage() {
                     let content = '';
 
                     eventSource.addEventListener("message", e => {
+                        stopTimer();
                         if (loadingMessageElement) {
                             chatBoxElement.removeChild(loadingMessageElement);
                             loadingMessageElement = null;
@@ -73,6 +78,7 @@ function handleSendMessage() {
                     fetch(stream_url).then();
 
                 } else {
+                    stopTimer();
                     chatBoxElement.removeChild(loadingMessageElement);
                     chatBoxElement.appendChild(chatMessageElement);
                     chatMessageElement.innerHTML = marked.parse(data.response);
@@ -162,4 +168,25 @@ function createChatMessageElement(stream) {
     } else {
         return document.createElement('div');
     }
+}
+
+function startTimer() {
+    clearInterval(timerInterval); // Clear any existing timer
+    secondsElapsed = 0; // Reset the timer
+    updateTimerDisplay();
+
+    timerInterval = setInterval(() => {
+        secondsElapsed++;
+        updateTimerDisplay();
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+    const seconds = String(secondsElapsed % 60).padStart(2, '0');
+    document.getElementById('chat-timer').textContent = `${minutes}:${seconds}`;
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
 }

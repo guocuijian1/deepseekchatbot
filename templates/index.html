@@ -9,6 +9,9 @@
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
 <body onload="initializeChatInterface()">
+<div class="timer-container">
+    <span id="chat-timer">00:00</span>
+</div>
 <div class="chat-container">
     <div class="alert" id="system-message"></div>
 
