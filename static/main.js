@@ -53,6 +53,7 @@ function handleSendMessage() {
                         } else {
                             content += data
                             chatMessageElement.innerHTML = marked.parse(content);
+                            //chatMessageElement.innerHTML = content;
                             chatBoxElement.scrollTop = chatBoxElement.scrollHeight;
                         }
                     })

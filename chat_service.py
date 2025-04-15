@@ -4,7 +4,7 @@ import chromadb
 import glob
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import CharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_ollama import OllamaEmbeddings
 from openai import OpenAI
 
@@ -22,7 +22,7 @@ def split_markdown_files(directory_path):
     documents = []
     for folder in folders:
         doc_type = os.path.basename(folder)
-        loader = DirectoryLoader(folder, glob="**/*.md", loader_cls=TextLoader, loader_kwargs=text_loader_kwargs)
+        loader = DirectoryLoader(folder, glob="**/*.txt", loader_cls=TextLoader, loader_kwargs=text_loader_kwargs)
         folder_docs = loader.load()
         for doc in folder_docs:
             doc.metadata["doc_type"] = doc_type
@@ -58,8 +58,7 @@ class ChatUtil:
 
         self.__chat_model = "deepseek-chat"
         self.__client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url="https://api.deepseek.com")
-        self.__system_template = "请根据以下提供的上下文信息来回答最后的问题，请始终用中文回答。内容以Markdown的形式显示。"
-        self.history = [{"role": "system", "content": self.__system_template}]
+        self.history = []
 
     @classmethod
     def get_instance(cls, stream_enabled):
@@ -70,7 +69,7 @@ class ChatUtil:
         return cls.__instance
 
     def initialize_vector_store_for_markdown(self):
-        collection_name = "markdown_collection"
+        collection_name = "books_collection"
         embedding_model = "nomic-embed-text"
         count = self.__chroma_client.count_collections()
         collections = self.__chroma_client.list_collections()
@@ -92,17 +91,39 @@ class ChatUtil:
                 collection_name=collection_name)
             return vectorstore
 
+    def get_history_content_size(self):
+        size = 0
+        for item in self.history:
+            content = item["content"]
+            size += len(content)
+
+        return size
+
     def retrieve_messages(self, user_message):
         content = ""
-        if len(self.history) == 1:
-            results = self.__vector_store.similarity_search(user_message, k=30)
+        max_size = 65536 // 2
+        prompt = """作为一个代理助手，回答以下问题。
+                    如果在[REF]和[/REF]标记之间提供了额外的参考信息，请利用这些信息作为回答问题的附加上下文。否则，请说您的知识库中还没有录入该信息。
+                    问题：{input}
+                    [REF]{content}[/REF]
+        """
+        history_content_size = self.get_history_content_size()
+        message_with_input = prompt.replace("{input}", user_message)
+        if not self.history:
+            results = self.__vector_store.similarity_search(user_message, k=10)
             for res in results:
-                print(f"Query data from vector db,content:\n{res.page_content},metadata:{res.metadata}")
+                #print(f"Query data from vector db,content:\n{res.page_content},metadata:{res.metadata}")
                 content += res.page_content + "\n"
+                current_size = len(content) + history_content_size
+                if current_size > max_size:
+                    content = content[:max_size - history_content_size]
+                    break
+            prompt_message = message_with_input.replace("{content}", content)
         else:
-            content = user_message
+            prompt_message = message_with_input.replace("{content}", "")
 
-        self.history.append({"role": "user", "content": content})
+        self.history.append({"role": "user", "content": prompt_message})
+        print("系统提示词为:\n", prompt_message)
         return self.history
 
     def chat_with_streaming(self, user_message):
@@ -123,7 +144,7 @@ class ChatUtil:
 
         print(f"回复的完整信息为:\n{reply}")
         self.history.append({"role": "user", "content": reply})
-        print(f"The history number is:{len(self.history)}")
+        print(f"历史记录数目为:{len(self.history)}")
 
         finish_message = format_sse_message("Finish")
         yield finish_message
@@ -146,8 +167,8 @@ class ChatUtil:
             user_message=user_message) if self.__stream_enabled else self.chat_with_no_stream(user_message=user_message)
 
     def clear_history(self):
-        msg = f"共有{len(self.history) - 1}条历史记录被清除"
-        self.history = self.history[:1]
+        msg = f"共有{len(self.history)}条历史记录被清除"
+        self.history = []
         print(msg)
         return msg
 
