@@ -5,7 +5,7 @@ from flask_assets import Environment
 from webassets import Bundle
 
 import app_service
-from chat_service import ChatUtil
+from octane_service import OctaneService
 
 app = Flask(__name__)
 assets = Environment(app)
@@ -29,9 +29,8 @@ def chat():  # put application's code here
     user_message = request.json.get("message")
     stream = request.json.get("stream")
     stream_enabled = True if stream == "true" else False
-    instance = ChatUtil.get_instance(stream_enabled)
-    data = jsonify({'response': '流模式已打开！'}) if stream_enabled else jsonify(
-        {'response': instance.chat(user_message)})
+    instance = OctaneService.get_instance()
+    data = jsonify({'response': instance.chat(user_message)})
     resp = make_response(data)
     app_service.set_or_check_session_id(request, resp)
     session_id = app_service.set_or_check_session_id(request=request, response=resp)
